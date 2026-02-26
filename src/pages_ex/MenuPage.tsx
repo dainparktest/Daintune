@@ -3,6 +3,7 @@ import { Box, Text, useInput, useApp } from 'ink'
 import { Page } from '../types.js'
 import Footer from '../components/Footer.js'
 import defaultInput from '../hooks/defaultInput.ts'
+import Header from '../components/Header.tsx'
 
 interface Props {
   onNavigate: (page: Page) => void
@@ -25,10 +26,7 @@ const MenuPage = ({ onNavigate }: Props) => {
 
   return (
     <Box flexDirection="column" padding={1} gap={1}>
-      <Box flexDirection="column" gap={1}>
-        <Text color="green" bold>gmusic</Text>
-        <Text color="gray">YouTube Music CLI Player</Text>
-      </Box>
+      <Header />
       <Box flexDirection="column" borderStyle="round" borderColor="green" paddingX={1}>
         {MENU_ITEMS.map((item, i) => {
           const isSelected = i === selected
