@@ -6,6 +6,7 @@ const SOCKET_PATH = '/tmp/gmusic-mpv.sock'
 
 let mpvProcess: ChildProcess | null = null
 let ipcSocket: net.Socket | null = null
+let currentToken = { active: false }
 
 export interface PlayerCallbacks {
   onPosition?: (pos: number) => void
@@ -15,6 +16,8 @@ export interface PlayerCallbacks {
 
 export const startPlayback = (youtubeId: string, callbacks: PlayerCallbacks = {}): Promise<void> => {
   stopPlayback()
+  const token = { active: true }
+  currentToken = token
 
   return new Promise((resolve, reject) => {
     if (fs.existsSync(SOCKET_PATH)) {
@@ -30,16 +33,19 @@ export const startPlayback = (youtubeId: string, callbacks: PlayerCallbacks = {}
     ], { stdio: 'ignore' })
 
     mpvProcess.on('error', (e) => {
+      if (!token.active) return
       callbacks.onError?.(e.message)
       reject(e)
     })
 
     mpvProcess.on('exit', () => {
+      if (!token.active) return
       callbacks.onEnd?.()
     })
 
     // Poll for socket file creation, then connect
     const waitForSocket = (attempts = 0) => {
+      if (!token.active) return
       if (fs.existsSync(SOCKET_PATH)) {
         connectIpc(resolve, callbacks)
       } else if (attempts < 50) {
@@ -84,6 +90,7 @@ const connectIpc = (onReady: () => void, callbacks: PlayerCallbacks) => {
 }
 
 export const stopPlayback = () => {
+  currentToken.active = false
   ipcSocket?.destroy()
   ipcSocket = null
   if (mpvProcess) {

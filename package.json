@@ -1,6 +1,6 @@
 {
   "name": "daintune",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "type": "module",
   "main": "./dist/index.js",
@@ -13,7 +13,8 @@
   "scripts": {
     "dev": "tsx src/index.tsx",
     "build": "esbuild src/index.tsx --bundle --platform=node --format=esm --packages=external --outfile=dist/index.js --banner:js='#!/usr/bin/env node'",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+     "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
