@@ -1,11 +1,11 @@
 {
-  "name": "gmusic",
-  "version": "1.0.0",
+  "name": "daintune",
+  "version": "1.0.1",
   "description": "",
   "type": "module",
   "main": "./dist/index.js",
   "bin": {
-    "gmusic": "./dist/index.js"
+    "daintune": "./dist/index.js"
   },
   "files": [
     "dist"
@@ -35,9 +35,12 @@
   "homepage": "https://github.com/DainPark-web/Git_Music#readme",
   "dependencies": {
     "ink": "^6.8.0",
-    "react": "^19.2.4"
+    "ink-text-input": "^6.0.0",
+    "react": "^19.2.4",
+    "yt-search": "^2.13.1"
   },
   "devDependencies": {
+    "@types/node": "^25.3.2",
     "@types/react": "^19.2.14",
     "esbuild": "^0.27.3",
     "tsx": "^4.21.0",

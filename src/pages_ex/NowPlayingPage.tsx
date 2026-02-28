@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Box, Text, useInput } from 'ink'
 import { Track } from '../types.js'
+import { startPlayback, stopPlayback, pausePlayback, resumePlayback } from '../player.js'
 
 interface Props {
   track: Track | null
@@ -15,33 +16,79 @@ const progressBar = (current: number, total: number, width = 32) => {
   return '='.repeat(filled) + 'O' + '-'.repeat(Math.max(0, width - filled - 1))
 }
 
+type Status = 'loading' | 'playing' | 'paused' | 'ended' | 'error'
+
 const NowPlayingPage = ({ track, onBack }: Props) => {
-  const [isPlaying, setIsPlaying] = useState(true)
+  const [status, setStatus] = useState<Status>('loading')
   const [progress, setProgress] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
-  // 곡이 바뀌면 초기화
   useEffect(() => {
+    if (!track?.youtubeId) return
+
+    setStatus('loading')
     setProgress(0)
-    setIsPlaying(true)
-  }, [track?.title])
+    setError(null)
 
-  // 1초마다 진행
-  useEffect(() => {
-    if (!isPlaying || !track) return
-    const id = setInterval(() => {
-      setProgress(prev => {
-        if (prev >= track.duration) { clearInterval(id); return prev }
-        return prev + 1
-      })
-    }, 1000)
-    return () => clearInterval(id)
-  }, [isPlaying, track])
+    startPlayback(track.youtubeId, {
+      onPosition: (pos) => {
+        setProgress(pos)
+        setStatus((s) => (s === 'loading' ? 'playing' : s))
+      },
+      onEnd: () => setStatus('ended'),
+      onError: (msg) => {
+        setError(msg)
+        setStatus('error')
+      },
+    }).catch((e: Error) => {
+      setError(e.message)
+      setStatus('error')
+    })
+
+    return () => stopPlayback()
+  }, [track?.youtubeId])
 
   useInput((input, key) => {
-    if (key.escape)    onBack()
-    if (input === ' ') setIsPlaying(prev => !prev)
-    if (input === 'r') { setProgress(0); setIsPlaying(true) }
+    if (key.escape) {
+      stopPlayback()
+      onBack()
+    }
+    if (input === ' ') {
+      if (status === 'playing') {
+        pausePlayback()
+        setStatus('paused')
+      } else if (status === 'paused') {
+        resumePlayback()
+        setStatus('playing')
+      }
+    }
+    if (input === 'r' && (status === 'ended' || status === 'paused' || status === 'playing')) {
+      setProgress(0)
+      setStatus('loading')
+      if (track?.youtubeId) {
+        startPlayback(track.youtubeId, {
+          onPosition: (pos) => {
+            setProgress(pos)
+            setStatus((s) => (s === 'loading' ? 'playing' : s))
+          },
+          onEnd: () => setStatus('ended'),
+          onError: (msg) => { setError(msg); setStatus('error') },
+        }).catch((e: Error) => { setError(e.message); setStatus('error') })
+      }
+    }
   })
+
+  const statusLabel =
+    status === 'loading' ? '  >> LOADING...' :
+    status === 'playing' ? '  >> PLAYING' :
+    status === 'paused'  ? '  || PAUSED ' :
+    status === 'ended'   ? '  [] ENDED  ' :
+                           '  !! ERROR  '
+
+  const statusColor =
+    status === 'playing' ? 'green' :
+    status === 'paused'  ? 'yellow' :
+    status === 'error'   ? 'red' : 'gray'
 
   return (
     <Box flexDirection="column" padding={1} gap={1}>
@@ -62,30 +109,30 @@ const NowPlayingPage = ({ track, onBack }: Props) => {
           <Text color="gray">No track selected. Go to Search or Library.</Text>
         ) : (
           <>
-            {/* 곡 정보 */}
             <Box flexDirection="column">
               <Text color="green" bold>{track.title}</Text>
               <Text color="gray">{track.artist}</Text>
             </Box>
 
-            {/* 프로그레스 바 */}
-            <Box flexDirection="column">
-              <Text color="green">[{progressBar(progress, track.duration)}]</Text>
-              <Box>
-                <Text color="gray">{fmt(progress)}</Text>
-                <Text color="gray">
-                  {'                                '.slice(0, 28)}
-                </Text>
-                <Text color="gray">{fmt(track.duration)}</Text>
-              </Box>
-            </Box>
+            {status === 'loading' && (
+              <Text color="yellow">Connecting to YouTube...</Text>
+            )}
 
-            {/* 재생 상태 */}
-            <Box>
-              <Text color={isPlaying ? 'green' : 'yellow'} bold>
-                {isPlaying ? '  >> PLAYING' : '  || PAUSED '}
-              </Text>
-            </Box>
+            {(status === 'playing' || status === 'paused') && (
+              <Box flexDirection="column">
+                <Text color="green">[{progressBar(progress, track.duration)}]</Text>
+                <Box>
+                  <Text color="gray">{fmt(progress)}</Text>
+                  <Text color="gray">{'                                '.slice(0, 28)}</Text>
+                  <Text color="gray">{fmt(track.duration)}</Text>
+                </Box>
+              </Box>
+            )}
+
+            {status === 'ended' && <Text color="gray">Playback ended. Press r to replay.</Text>}
+            {status === 'error' && <Text color="red">Error: {error}</Text>}
+
+            <Text color={statusColor} bold>{statusLabel}</Text>
           </>
         )}
       </Box>

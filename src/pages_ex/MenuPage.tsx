@@ -27,18 +27,28 @@ const MenuPage = ({ onNavigate }: Props) => {
   return (
     <Box flexDirection="column" padding={1} gap={1}>
       <Header />
+
       <Box flexDirection="column" borderStyle="round" borderColor="green" paddingX={1}>
-        {MENU_ITEMS.map((item, i) => {
-          const isSelected = i === selected
-          return (
-            <Box key={item.label}>
-              <Text color={isSelected ? 'black' : 'white'} backgroundColor={isSelected ? 'green' : undefined} bold={isSelected}>{` [${item.icon}] ${item.label.padEnd(14)}`}</Text>
-            </Box>
-          )
-        })}
+        <MenuItems selected={selected} />
       </Box>
 
       <Footer />
+    </Box>
+  )
+}
+
+
+const MenuItems = ({ selected }: { selected: number }) => {
+  return MENU_ITEMS.map((item, i) => {
+    const isSelected = i === selected
+    return <MenuItem key={item.label} item={item} isSelected={isSelected} />
+  })
+}
+
+const MenuItem = ({ item, isSelected }: { item: { label: string; icon: string; page: Page | null }, isSelected: boolean }) => {
+  return (
+    <Box key={item.label}>
+      <Text color={isSelected ? 'black' : 'white'} backgroundColor={isSelected ? 'green' : undefined} bold={isSelected}>{` [${item.icon}] ${item.label.padEnd(14)}`}</Text>
     </Box>
   )
 }
