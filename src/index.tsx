@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { render } from 'ink'
-import MenuPage from './pages_ex/MenuPage.js'
+import MenuPage from './pages/MenuPage.js'
 import { Page, Track } from './types.js'
-import SearchPage from './pages_ex/SearchPage.js'
-import LibraryPage from './pages_ex/LibraryPage.js'
-import NowPlayingPage from './pages_ex/NowPlayingPage.js'
-import SettingsPage from './pages_ex/SettingsPage.js'
+import SearchPage from './pages/SearchPage.js'
+import LibraryPage from './pages/LibraryPage.js'
+import NowPlayingPage from './pages/NowPlayingPage.js'
+import SettingsPage from './pages/SettingsPage.js'
 
 const App = () => {
   const [page, setPage] = useState<Page>('menu')
