@@ -1,4 +1,4 @@
-# daintune
+# Daintune
 
 A terminal-based YouTube music player. Search and play music directly from your command line — no browser needed.
 
