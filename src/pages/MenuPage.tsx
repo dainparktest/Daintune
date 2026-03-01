@@ -28,11 +28,11 @@ const MenuPage = ({ onNavigate }: Props) => {
     <Box flexDirection="column" padding={1} gap={1}>
       <Header description="Choose an option" />
 
-      <Box flexDirection="column" borderStyle="round" borderColor="green" paddingX={1}>
+      <Box flexDirection="column" borderStyle="round" borderColor="green" paddingX={1} paddingY={1}>
         <MenuItems selected={selected} />
       </Box>
 
-      <Footer />
+      <Footer description={`up/down navigate\nEnter select\n"q" quit`} />
     </Box>
   )
 }

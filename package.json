@@ -1,6 +1,6 @@
 {
   "name": "daintune",
-  "version": "1.0.2",
+  "version": "2.0.1",
   "description": "",
   "type": "module",
   "main": "./dist/index.js",
@@ -25,7 +25,7 @@
     "youtube",
     "music"
   ],
-  "author": "",
+  "author": "Dain Park",
   "license": "MIT",
   "engines": {
     "node": ">=18"

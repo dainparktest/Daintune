@@ -5,26 +5,32 @@ import Footer from "../components/Footer.js"
 import TextInput from "ink-text-input"
 import yts from "yt-search"
 import { Track } from "../types.js"
+import { Playlist } from "./LibraryPage.js"
 
 interface Props {
+  playlists: Playlist[]
+  onAddToPlaylist: (track: Track, playlistIndex: number) => void
   onBack: () => void
-  onPlay: (track: Track) => void
+  onPlay: (tracks: Track[], index: number) => void
 }
 
-type Mode = 'input' | 'results'
+type Mode = 'input' | 'results' | 'addToPlaylist'
 
-const SearchPage = ({ onBack, onPlay }: Props) => {
+const SearchPage = ({ playlists, onAddToPlaylist, onBack, onPlay }: Props) => {
   const [query, setQuery] = useState('')
   const [mode, setMode] = useState<Mode>('input')
   const [results, setResults] = useState<Track[]>([])
   const [selected, setSelected] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [selectedPlaylistForAdd, setSelectedPlaylistForAdd] = useState(0)
+  const [addResult, setAddResult] = useState<{ type: 'added' | 'duplicate'; name: string } | null>(null)
 
   const runSearch = async (q: string) => {
     if (!q.trim()) return
     setLoading(true)
     setError(null)
+    setAddResult(null)
     try {
       const res = await yts(q)
       const tracks: Track[] = res.videos.slice(0, 10).map((item) => ({
@@ -43,39 +49,52 @@ const SearchPage = ({ onBack, onPlay }: Props) => {
     }
   }
 
-  // results mode key handling
-  useInput(
-    (_input, key) => {
-      if (key.escape) {
-        setMode('input')
-        return
-      }
-      if (key.upArrow) {
-        setSelected((s) => Math.max(0, s - 1))
-      }
-      if (key.downArrow) {
-        setSelected((s) => Math.min(results.length - 1, s + 1))
-      }
-      if (key.return && results.length > 0) {
-        onPlay(results[selected])
-      }
-    },
-    { isActive: mode === 'results' }
-  )
+  useInput((_input, key) => {
+    if (key.escape) onBack()
+  }, { isActive: mode === 'input' })
 
-  // input mode Esc handling
-  useInput(
-    (_input, key) => {
-      if (key.escape) onBack()
-    },
-    { isActive: mode === 'input' }
-  )
+  useInput((input, key) => {
+    if (key.escape)    { setMode('input'); return }
+    if (key.upArrow)   setSelected(s => Math.max(0, s - 1))
+    if (key.downArrow) setSelected(s => Math.min(results.length - 1, s + 1))
+    if (key.return && results.length > 0) onPlay(results, selected)
+    if (input === 'a' && results.length > 0) {
+      setSelectedPlaylistForAdd(0)
+      setAddResult(null)
+      setMode('addToPlaylist')
+    }
+  }, { isActive: mode === 'results' })
 
-  const formatDuration = (seconds: number): string => {
+  useInput((_input, key) => {
+    if (key.escape)    { setMode('results'); return }
+    if (key.upArrow)   setSelectedPlaylistForAdd(prev => (prev - 1 + playlists.length) % playlists.length)
+    if (key.downArrow) setSelectedPlaylistForAdd(prev => (prev + 1) % playlists.length)
+    if (key.return) {
+      const pl = playlists[selectedPlaylistForAdd]
+      const track = results[selected]
+      const isDuplicate = pl.tracks.some(t =>
+        t.youtubeId ? t.youtubeId === track.youtubeId : t.title === track.title
+      )
+      if (isDuplicate) {
+        setAddResult({ type: 'duplicate', name: pl.name })
+      } else {
+        onAddToPlaylist(track, selectedPlaylistForAdd)
+        setAddResult({ type: 'added', name: pl.name })
+      }
+      setMode('results')
+    }
+  }, { isActive: mode === 'addToPlaylist' })
+
+  const formatDuration = (seconds: number) => {
     const m = Math.floor(seconds / 60)
     const s = seconds % 60
     return `${m}:${s.toString().padStart(2, '0')}`
   }
+
+  const footerText =
+    mode === 'addToPlaylist' ? `up/down navigate  Enter add  Esc cancel` :
+    mode === 'results'       ? `up/down navigate  Enter play  a add to playlist  Esc back` :
+                               `Enter search  Esc back`
 
   return (
     <Box flexDirection="column" padding={1} gap={1}>
@@ -106,22 +125,44 @@ const SearchPage = ({ onBack, onPlay }: Props) => {
           <Text color="gray">No results found.</Text>
         )}
 
-        {mode === 'results' &&
-          results.map((track, i) => (
-            <Box key={track.youtubeId ?? i} gap={1}>
-              <Text color={i === selected ? 'green' : 'gray'}>
-                {i === selected ? '>' : ' '}
+        {(mode === 'results' || mode === 'addToPlaylist') && results.map((track, i) => (
+          <Box key={track.youtubeId ?? i} gap={1}>
+            <Text color={i === selected ? 'green' : 'gray'}>
+              {i === selected ? '>' : ' '}
+            </Text>
+            <Text color={i === selected && mode === 'results' ? 'white' : 'gray'} bold={i === selected && mode === 'results'}>
+              {track.title.length > 40 ? track.title.slice(0, 37) + '...' : track.title}
+            </Text>
+            <Text color="gray">{track.artist}</Text>
+            <Text color="gray">{formatDuration(track.duration)}</Text>
+          </Box>
+        ))}
+
+        {addResult && mode === 'results' && (
+          <Text color={addResult.type === 'added' ? 'green' : 'yellow'}>
+            {addResult.type === 'added'
+              ? `Added to "${addResult.name}"!`
+              : `Already in "${addResult.name}".`}
+          </Text>
+        )}
+
+        {mode === 'addToPlaylist' && (
+          <Box flexDirection="column" borderStyle="single" borderColor="yellow" paddingX={1} marginTop={1}>
+            <Text color="yellow">Add to playlist:</Text>
+            {playlists.map((pl, i) => (
+              <Text
+                key={pl.name}
+                color={i === selectedPlaylistForAdd ? 'black' : 'white'}
+                backgroundColor={i === selectedPlaylistForAdd ? 'yellow' : undefined}
+              >
+                {` ${pl.name.padEnd(22)} ${pl.tracks.length} tracks`}
               </Text>
-              <Text color={i === selected ? 'white' : 'gray'} bold={i === selected}>
-                {track.title.length > 40 ? track.title.slice(0, 37) + '...' : track.title}
-              </Text>
-              <Text color="gray">{track.artist}</Text>
-              <Text color="gray">{formatDuration(track.duration)}</Text>
-            </Box>
-          ))}
+            ))}
+          </Box>
+        )}
       </Box>
 
-      <Footer />
+      <Footer description={footerText} />
     </Box>
   )
 }

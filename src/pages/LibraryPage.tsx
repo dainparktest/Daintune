@@ -3,129 +3,147 @@ import { Box, Text, useInput } from 'ink'
 import { Track } from '../types.js'
 import Header from '../components/Header.js'
 import TextInput from 'ink-text-input'
+import Footer from '../components/Footer.js'
 
-const PLAYLISTS = [
-  {
-    name: 'Favorites',
-    tracks: [
-      { title: 'Blinding Lights',  artist: 'The Weeknd',    duration: 200 },
-      { title: 'Levitating',       artist: 'Dua Lipa',      duration: 203 },
-      { title: 'Bad Guy',          artist: 'Billie Eilish', duration: 194 },
-    ],
-  },
-  {
-    name: 'Chill Mix',
-    tracks: [
-      { title: 'Dreams',         artist: 'Fleetwood Mac', duration: 257 },
-      { title: 'The Night We Met', artist: 'Lord Huron',  duration: 206 },
-      { title: 'Skinny Love',    artist: 'Bon Iver',      duration: 213 },
-    ],
-  },
-  {
-    name: 'Workout',
-    tracks: [
-      { title: 'Eye of the Tiger', artist: 'Survivor',  duration: 244 },
-      { title: 'Lose Yourself',    artist: 'Eminem',    duration: 326 },
-      { title: 'Thunderstruck',    artist: 'AC/DC',     duration: 292 },
-    ],
-  },
+export interface Playlist {
+  name: string
+  tracks: Track[]
+}
+
+export const INITIAL_PLAYLISTS: Playlist[] = [
+  { name: 'Favorites', tracks: [
+    
+  ] },
 ]
 
 interface Props {
+  playlists: Playlist[]
+  onAddPlaylist: (name: string) => void
+  onRemovePlaylist: (index: number) => void
+  onRemoveTrack: (playlistIndex: number, trackIndex: number) => void
+  onPlayPlaylist: (tracks: Track[], trackIndex: number, playlistIndex: number) => void
+  initialPlaylistIndex: number
+  initialMode: 'playlists' | 'tracks'
   onBack: () => void
-  onPlay: (track: Track) => void
 }
 
 const fmt = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
 
-const LibraryPage = ({ onBack, onPlay }: Props) => {
-  const [mode, setMode] = useState<'playlists' | 'tracks' | 'createPlaylist'>('playlists')
-  const [selectedPlaylist, setSelectedPlaylist] = useState(0)
+const LibraryPage = ({ playlists, onAddPlaylist, onRemovePlaylist, onRemoveTrack, onPlayPlaylist, initialPlaylistIndex, initialMode, onBack }: Props) => {
+  const [mode, setMode] = useState<'playlists' | 'tracks' | 'createPlaylist'>(initialMode)
+  const [selectedPlaylist, setSelectedPlaylist] = useState(initialPlaylistIndex)
   const [selectedTrack, setSelectedTrack] = useState(0)
   const [playlistName, setPlaylistName] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState<false | 'track' | 'playlist'>(false)
 
-  const playlist = PLAYLISTS[selectedPlaylist]
+  const playlist = playlists[selectedPlaylist]
 
   useInput((input, key) => {
-    if (key.escape) {
-      if (mode === 'tracks') { setMode('playlists'); setSelectedTrack(0) }
-      else onBack()
-      return
-    }
-    if (input === "c") {
-      setMode('createPlaylist')
-      return
-    }
-   
-
-    if (mode === 'playlists') {
-      if (key.upArrow)   setSelectedPlaylist(prev => (prev - 1 + PLAYLISTS.length) % PLAYLISTS.length)
-      if (key.downArrow) setSelectedPlaylist(prev => (prev + 1) % PLAYLISTS.length)
-      if (key.return)    { setMode('tracks'); setSelectedTrack(0) }
-    } 
-    if (mode === 'tracks') {
-      if (key.upArrow)   setSelectedTrack(prev => (prev - 1 + playlist.tracks.length) % playlist.tracks.length)
-      if (key.downArrow) setSelectedTrack(prev => (prev + 1) % playlist.tracks.length)
-      if (key.return)    onPlay(playlist.tracks[selectedTrack])
-    }
     if (mode === 'createPlaylist') {
       if (key.return) {
+        if (playlistName.trim()) onAddPlaylist(playlistName.trim())
         setMode('playlists')
-        setSelectedPlaylist(0)
-        setSelectedTrack(0)
-        return
+        setPlaylistName('')
       }
-    
+      if (key.escape) {
+        setMode('playlists')
+        setPlaylistName('')
+      }
+      return
+    }
+
+    if (confirmDelete) {
+      if (input === 'y') {
+        if (confirmDelete === 'track') {
+          onRemoveTrack(selectedPlaylist, selectedTrack)
+          setSelectedTrack(Math.min(selectedTrack, Math.max(0, playlist.tracks.length - 2)))
+        } else {
+          onRemovePlaylist(selectedPlaylist)
+          setSelectedPlaylist(Math.min(selectedPlaylist, Math.max(0, playlists.length - 2)))
+        }
+        setConfirmDelete(false)
+      }
+      if (input === 'n' || key.escape) setConfirmDelete(false)
+      return
+    }
+
+    if (mode === 'playlists') {
+      if (key.upArrow)   setSelectedPlaylist(prev => (prev - 1 + playlists.length) % playlists.length)
+      if (key.downArrow) setSelectedPlaylist(prev => (prev + 1) % playlists.length)
+      if (key.return)    { setMode('tracks'); setSelectedTrack(0) }
+      if (key.escape)    onBack()
+      if (input === 'c') setMode('createPlaylist')
+      if (input === 'r') setConfirmDelete('playlist')
+    }
+
+    if (mode === 'tracks') {
+      const count = playlist.tracks.length
+      if (count > 0) {
+        if (key.upArrow)   setSelectedTrack(prev => (prev - 1 + count) % count)
+        if (key.downArrow) setSelectedTrack(prev => (prev + 1) % count)
+        if (key.return)    onPlayPlaylist(playlist.tracks, selectedTrack, selectedPlaylist)
+        if (input === 'r') setConfirmDelete('track')
+      }
+      if (key.escape) { setMode('playlists'); setSelectedTrack(0) }
     }
   })
 
+  const footerText = mode === 'tracks'
+    ? `up/down navigate  Enter play  r remove  Esc back`
+    : `up/down navigate  Enter select  r remove  c create  Esc back`
+
   return (
     <Box flexDirection="column" padding={1} gap={1}>
-      <Box gap={1}>
-        <Header description={mode === 'tracks' ? `Library / ${playlist.name}` : 'Library'} />
-      </Box>
+      <Header description={
+        mode === 'tracks' ? `Library / ${playlist.name}` :
+        mode === 'createPlaylist' ? 'Create Playlist' : 'Library'
+      } />
 
-      <Box flexDirection="column" borderStyle="round" borderColor="green" paddingX={1}>
-        {mode === 'playlists' && PLAYLISTS.map((pl, i) => {
-              const isSelected = i === selectedPlaylist
-              return (
-                <Box key={pl.name}>
-                  <Text
-                    color={isSelected ? 'black' : 'white'}
-                    backgroundColor={isSelected ? 'green' : undefined}
-                  >
-                    {` [+] ${pl.name.padEnd(20)} ${pl.tracks.length} tracks`}
-                  </Text>
-                </Box>
-              )
-            })
-        }
-        {mode === 'tracks' && playlist.tracks.map((track, i) => {
-              const isSelected = i === selectedTrack
-              return (
+      <Box flexDirection="column" borderStyle="round" borderColor="green" paddingX={1} paddingY={1} gap={1}>
+        {mode === 'playlists' && playlists.map((pl, i) => (
+          <Box key={pl.name}>
+            <Text
+              color={i === selectedPlaylist ? 'black' : 'white'}
+              backgroundColor={i === selectedPlaylist ? 'green' : undefined}
+            >
+              {` [+] ${pl.name.padEnd(20)} ${pl.tracks.length} tracks`}
+            </Text>
+          </Box>
+        ))}
+
+        {mode === 'tracks' && (
+          playlist.tracks.length === 0
+            ? <Text color="gray">  No tracks yet. Search for songs and add them here.</Text>
+            : playlist.tracks.map((track, i) => (
                 <Box key={i}>
                   <Text
-                    color={isSelected ? 'black' : 'white'}
-                    backgroundColor={isSelected ? 'green' : undefined}
+                    color={i === selectedTrack ? 'black' : 'white'}
+                    backgroundColor={i === selectedTrack ? 'green' : undefined}
                   >
                     {` [>] ${track.title.padEnd(24)} ${track.artist.padEnd(18)} ${fmt(track.duration)}`}
                   </Text>
                 </Box>
-              )
-            })
-        }
+              ))
+        )}
+
         {mode === 'createPlaylist' && (
-          <Box>
-            <Text color="green">Create playlist:</Text>
-            <TextInput
-              value={playlistName}
-              onChange={setPlaylistName}
-            />
+          <Box gap={1}>
+            <Text color="green">Name:</Text>
+            <TextInput value={playlistName} onChange={setPlaylistName} />
+          </Box>
+        )}
+
+        {confirmDelete && (
+          <Box gap={2} marginTop={1}>
+            <Text color="red">
+              Remove "{confirmDelete === 'track' ? playlist.tracks[selectedTrack]?.title : playlists[selectedPlaylist]?.name}"?
+            </Text>
+            <Text color="yellow">[y] Yes  [n] No</Text>
           </Box>
         )}
       </Box>
 
-      <Text color="gray">up/down navigate  Enter select  Esc back</Text>
+      <Footer description={footerText} />
     </Box>
   )
 }

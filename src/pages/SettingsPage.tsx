@@ -1,43 +1,38 @@
 import React, { useState } from 'react'
 import { Box, Text, useInput } from 'ink'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 
-interface Setting {
+export interface Setting {
   label: string
   value: boolean
 }
 
-const INITIAL_SETTINGS: Setting[] = [
-  { label: 'Autoplay next track', value: true  },
+export const INITIAL_SETTINGS: Setting[] = [
+  { label: 'Autoplay next track', value: true },
   { label: 'Shuffle',             value: false },
   { label: 'Repeat',              value: false },
-  { label: 'Show lyrics',         value: true  },
 ]
 
 interface Props {
+  settings: Setting[]
+  onToggle: (index: number) => void
   onBack: () => void
 }
 
-const SettingsPage = ({ onBack }: Props) => {
+const SettingsPage = ({ settings, onToggle, onBack }: Props) => {
   const [selected, setSelected] = useState(0)
-  const [settings, setSettings] = useState(INITIAL_SETTINGS)
 
   useInput((_, key) => {
     if (key.escape)    onBack()
     if (key.upArrow)   setSelected(prev => (prev - 1 + settings.length) % settings.length)
     if (key.downArrow) setSelected(prev => (prev + 1) % settings.length)
-    if (key.return) {
-      setSettings(prev =>
-        prev.map((s, i) => i === selected ? { ...s, value: !s.value } : s)
-      )
-    }
+    if (key.return)    onToggle(selected)
   })
 
   return (
     <Box flexDirection="column" padding={1} gap={1}>
-      <Box gap={1}>
-        <Text color="green" bold>gmusic</Text>
-        <Text color="gray">/ Settings</Text>
-      </Box>
+      <Header description="Settings" />
 
       <Box flexDirection="column" borderStyle="round" borderColor="green" paddingX={1}>
         {settings.map((setting, i) => {
@@ -58,7 +53,7 @@ const SettingsPage = ({ onBack }: Props) => {
         })}
       </Box>
 
-      <Text color="gray">up/down navigate  Enter toggle  Esc back</Text>
+      <Footer description={`up/down navigate\nEnter toggle\n"Esc" back`} />
     </Box>
   )
 }

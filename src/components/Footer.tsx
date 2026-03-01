@@ -1,9 +1,9 @@
 import { Box, Text } from "ink"
 import React from "react"
 
-const Footer = () => {
+const Footer = ({ description }: { description: string }) => {
   return (
-    <Text color="gray">up/down navigate  Enter toggle  Esc back</Text>
+    <Text color="gray">{description}</Text>
   )
 }
 

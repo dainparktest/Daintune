@@ -5,4 +5,5 @@ export interface Track {
   artist: string
   duration: number // seconds
   youtubeId?: string
+  lyrics?: string
 }

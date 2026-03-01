@@ -1,6 +1,6 @@
 # Daintune
 
-A terminal-based YouTube music player. Search and play music directly from your command line — no browser needed.
+A terminal-based YouTube music player. Search, organize, and play music directly from your command line — no browser needed.
 
 Built with [Ink](https://github.com/vadimdemedes/ink) (React for CLIs) and powered by `mpv`.
 
@@ -8,7 +8,7 @@ Built with [Ink](https://github.com/vadimdemedes/ink) (React for CLIs) and power
 
 ## Prerequisites
 
-daintune requires two system tools to be installed:
+Daintune requires two system tools:
 
 ### macOS
 ```bash
@@ -34,7 +34,7 @@ Not currently supported (requires Unix socket support).
 npm install -g daintune
 ```
 
-All npm dependencies (including YouTube search) are installed automatically.
+All npm dependencies are installed automatically.
 
 ---
 
@@ -44,37 +44,71 @@ All npm dependencies (including YouTube search) are installed automatically.
 daintune
 ```
 
-### Navigation
-
-| Key        | Action         |
-|------------|----------------|
-| `↑` / `↓` | Move selection |
-| `Enter`    | Confirm / Play |
-| `Esc`      | Go back        |
-| `Space`    | Pause / Resume |
-| `r`        | Restart track  |
-| `q`        | Quit           |
-
 ---
 
 ## Features
 
-- YouTube music search from the terminal
-- Audio-only playback via `mpv` (no video, no browser)
-- Keyboard-driven TUI interface
-- Minimal and fast
+- **Search** — Search YouTube and play audio instantly
+- **Library** — Organize tracks into playlists; create, delete, and manage them
+- **Queue** — Search results and playlists play as a continuous queue
+- **Settings** — Toggle Repeat, Shuffle, and Autoplay Next per session
+
+---
+
+## Keybindings
+
+### General
+
+| Key        | Action              |
+|------------|---------------------|
+| `↑` / `↓` | Move selection      |
+| `Enter`    | Confirm / Play      |
+| `Esc`      | Go back             |
+
+### Now Playing
+
+| Key     | Action                        |
+|---------|-------------------------------|
+| `Space` | Pause / Resume                |
+| `r`     | Restart current track         |
+| `n`     | Skip to next track in queue   |
+| `a`     | Add current track to playlist |
+| `Esc`   | Back to previous screen       |
+
+### Library
+
+| Key     | Action                  |
+|---------|-------------------------|
+| `Enter` | Open playlist / Play    |
+| `c`     | Create new playlist     |
+| `r`     | Remove selected item    |
+| `Esc`   | Go back                 |
+
+### Search
+
+| Key     | Action                        |
+|---------|-------------------------------|
+| `Enter` | Play from selected result     |
+| `a`     | Add to playlist               |
+| `Esc`   | Back to search input / Menu   |
 
 ---
 
 ## Tech Stack
 
 - [Ink](https://github.com/vadimdemedes/ink) — React-based terminal UI
-- [yt-search](https://github.com/talmobi/yt-search) — YouTube search (installed automatically)
+- [yt-search](https://github.com/talmobi/yt-search) — YouTube search
 - [mpv](https://mpv.io/) — Audio playback
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — YouTube stream extraction (used internally by mpv)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) — YouTube stream extraction
+
+---
+
+## Contributing
+
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a pull request.
 
 ---
 
 ## License
 
-MIT © Dain Park
+MIT © Dain Park — see [LICENSE](LICENSE) for details.
